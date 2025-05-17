@@ -1,66 +1,63 @@
-#include "TDS.h"
-#include "therm.h"
-#include "PH.h"
-#include <SPI.h>
-#include <SD.h>
-phsens phsens;
-therm therm;
-TDS TDS;
+#include "TDS.h" // Include TDS sensor class
+#include "therm.h" // Include thermistor class
+#include "PH.h" // Include pH sensor class
+#include <SPI.h> // SPI library for SD communication
+#include <SD.h> // SD card library
 
-const int chipSelect = 10;
-File myFile;
+phsens phsens; // Create instance of pH sensor
+therm therm; // Create instance of thermistor
+TDS TDS; // Create instance of TDS sensor
+
+const int chipSelect = 10; // Chip select pin for SD card module
+File myFile; // File object for SD operations
 
 void setup()
 {
-  Serial.begin(9600);
-    // wait for Serial Monitor to connect. Needed for native USB port boards only:
+  Serial.begin(9600); // Start serial communication at 9600 baud
+
+  // Wait for Serial Monitor to connect (only needed for boards with native USB)
   while (!Serial);
 
   Serial.print("Initializing SD card...");
 
+  // Try to initialize SD card with chip select pin
   if (!SD.begin(chipSelect)) {
     Serial.println("initialization failed. Things to check:");
     Serial.println("1. is a card inserted?");
     Serial.println("2. is your wiring correct?");
     Serial.println("3. did you change the chipSelect pin to match your shield or module?");
     Serial.println("Note: press reset button on the board and reopen this Serial Monitor after fixing your issue!");
-    while (true);
+    while (true); // Halt program if SD init fails
   }
 
-  Serial.println("initialization done.");
-
-
-
-  
-
-
+  Serial.println("initialization done."); // SD initialized successfully
 }
 
 void loop()
 {
-for (int i = 0; i < 5; i++) {
-therm.Therm_run();
-TDS.TDS_run();
-phsens.ph();
+  // Collect 5 samples from each sensor
+  for (int i = 0; i < 5; i++) {
+    therm.Therm_run(); // Read temperature
+    TDS.TDS_run(); // Read TDS value
+    phsens.ph(); // Read pH value
+  }
 
-}
-delay(1000);
-myFile = SD.open("test.txt", FILE_WRITE);
+  delay(1000); // Wait 1 second before logging
+
+  // Open file to write data
+  myFile = SD.open("test.txt", FILE_WRITE);
   if (myFile) {
-    Serial.print("Writing to test.txt...");
-    myFile.println("PH:");
-    myFile.println(pHValue);
-    myFile.println("TDS:");
-    myFile.println(tdsValue);
-    myFile.println("temperature:");
-    myFile.println(steinhart);
+    Serial.print("Writing to test.txt..."); // Notify start of write
+    myFile.println("PH:"); // Write pH label
+    myFile.println(pHValue); // Write pH value
+    myFile.println("TDS:"); // Write TDS label
+    myFile.println(tdsValue); // Write TDS value
+    myFile.println("temperature:"); // Write temperature label
+    myFile.println(steinhart); // Write temperature value
 
-
-    // close the file:
-    myFile.close();
-    Serial.println("done.");
+    myFile.close(); // Save and close file
+    Serial.println("done."); // Notify write complete
   } else {
-    // if the file didn't open, print an error:
-    Serial.println("error opening test.txt");
+    Serial.println("error opening test.txt"); // Error if file can't be opened
   }
 }
